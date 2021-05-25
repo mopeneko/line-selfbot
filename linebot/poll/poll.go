@@ -26,6 +26,9 @@ func Poll(ctx context.Context, client *lineclient.LINEClient) {
 	for {
 		operations, err := client.TalkServiceClientForPolling.FetchOps(ctx, localRev, count, globalRev, individualRev)
 		if err != nil {
+			if strings.HasPrefix(err.Error(), "http2: server sent GOAWAY and closed the connection") {
+				continue
+			}
 			log.Fatalf("failed to call fetchOps: %+v\n", err)
 		}
 
