@@ -68,7 +68,7 @@ func SaveConfig(cfg *Config, mid string) error {
 		return err
 	}
 
-	file, err := os.OpenFile(fmt.Sprintf("./data/%s.json", mid), os.O_WRONLY, 0664)
+	file, err := os.OpenFile(fmt.Sprintf("./data/%s.json", mid), os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
