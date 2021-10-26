@@ -11,7 +11,7 @@ type Config struct {
 	AutoLeaveRoom bool `json:"autoLeaveRoom"`
 }
 
-func initConfig(mid string) (*os.File, error) {
+func initConfig(mid string) (*Config, error) {
 	// TODO: 初期値が全てGoのデフォルトになってしまうので、NewConfig のようなイニシャライザ関数を作って、それを呼び出すようにする
 	cfg := new(Config)
 	b, err := json.Marshal(cfg)
@@ -24,21 +24,25 @@ func initConfig(mid string) (*os.File, error) {
 		return nil, err
 	}
 
+	defer file.Close()
+
 	_, err = file.Write(b)
 	if err != nil {
 		return nil, err
 	}
 
-	return file, nil
+	return cfg, nil
 }
 
 func LoadConfig(mid string) (*Config, error) {
 	file, err := os.Open(fmt.Sprintf("./data/%s.json", mid))
 	if err != nil {
-		file, err = initConfig(mid)
+		cfg, err := initConfig(mid)
 		if err != nil {
 			return nil, err
 		}
+
+		return cfg, nil
 	}
 
 	defer file.Close()
