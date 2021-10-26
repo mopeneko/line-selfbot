@@ -4,19 +4,54 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
+	"strings"
 	"time"
 
+	"github.com/mopeneko/line-selfbot/linebot/config"
 	"github.com/mopeneko/line-selfbot/linebot/pkg/lineclient"
 	"github.com/mopeneko/line-selfbot/linebot/pkg/tmpl"
 	"github.com/mopeneko/line-selfbot/linethrift/talkservice"
 )
 
-func sendMessage(ctx context.Context, op *talkservice.Operation, client *lineclient.LINEClient) error {
+func sendMessage(ctx context.Context, op *talkservice.Operation, client *lineclient.LINEClient, cfg *config.Config) error {
 	message := op.Message
 
 	// Global commands
-	if message.Text == "help" {
-		err := helpCommand(ctx, op, client)
+	switch message.Text {
+	case "help":
+		err := helpCommand(ctx, op, client, cfg)
+		if err != nil {
+			return err
+		}
+
+	case "speed":
+		err := speedCommand(ctx, op, client, cfg)
+		if err != nil {
+			return err
+		}
+
+	case "setting":
+		err := settingCommand(ctx, op, client, cfg)
+		if err != nil {
+			return err
+		}
+
+	case "autoleaveroom:on":
+		err := autoLeaveRoomOnCommand(ctx, op, client, cfg)
+		if err != nil {
+			return err
+		}
+
+	case "autoleaveroom:off":
+		err := autoLeaveRoomOffCommand(ctx, op, client, cfg)
+		if err != nil {
+			return err
+		}
+	}
+
+	if strings.HasPrefix(message.Text, "macro:") {
+		err := macroCommand(ctx, op, client, cfg)
 		if err != nil {
 			return err
 		}
@@ -29,13 +64,7 @@ func sendMessage(ctx context.Context, op *talkservice.Operation, client *linecli
 
 	switch message.Text {
 	case "url":
-		err := urlCommand(ctx, op, client)
-		if err != nil {
-			return err
-		}
-
-	case "speed":
-		err := speedCommand(ctx, op, client)
+		err := urlCommand(ctx, op, client, cfg)
 		if err != nil {
 			return err
 		}
@@ -44,7 +73,7 @@ func sendMessage(ctx context.Context, op *talkservice.Operation, client *linecli
 	return nil
 }
 
-func helpCommand(ctx context.Context, op *talkservice.Operation, client *lineclient.LINEClient) error {
+func helpCommand(ctx context.Context, op *talkservice.Operation, client *lineclient.LINEClient, cfg *config.Config) error {
 	message := op.Message
 	to := message.To
 	if message.ToType == talkservice.MIDType_USER {
@@ -60,7 +89,7 @@ func helpCommand(ctx context.Context, op *talkservice.Operation, client *linecli
 	return nil
 }
 
-func urlCommand(ctx context.Context, op *talkservice.Operation, client *lineclient.LINEClient) error {
+func urlCommand(ctx context.Context, op *talkservice.Operation, client *lineclient.LINEClient, cfg *config.Config) error {
 	message := op.Message
 
 	chats, err := client.TalkServiceClient.GetChats(ctx, &talkservice.GetChatsRequest{
@@ -104,7 +133,7 @@ func urlCommand(ctx context.Context, op *talkservice.Operation, client *lineclie
 	return nil
 }
 
-func speedCommand(ctx context.Context, op *talkservice.Operation, client *lineclient.LINEClient) error {
+func speedCommand(ctx context.Context, op *talkservice.Operation, client *lineclient.LINEClient, cfg *config.Config) error {
 	message := op.Message
 	to := message.To
 	if message.ToType == talkservice.MIDType_USER {
@@ -119,13 +148,112 @@ func speedCommand(ctx context.Context, op *talkservice.Operation, client *linecl
 	_, err := client.TalkServiceClient.SendMessage(ctx, 0, msg)
 	end := time.Now()
 	if err != nil {
-		return nil
+		return err
 	}
 
 	msg.Text = fmt.Sprintf("%d ms", end.Sub(start).Milliseconds())
 	_, err = client.TalkServiceClient.SendMessage(ctx, 0, msg)
 	if err != nil {
-		return nil
+		return err
+	}
+
+	return nil
+}
+
+func settingCommand(ctx context.Context, op *talkservice.Operation, client *lineclient.LINEClient, cfg *config.Config) error {
+	message := op.Message
+	to := message.To
+	if message.ToType == talkservice.MIDType_USER {
+		to = message.Get_from()
+	}
+
+	params := &tmpl.SettingParams{
+		AutoLeaveRoom: cfg.AutoLeaveRoom,
+	}
+
+	err := tmpl.SendTemplate(ctx, to, "setting.tmpl", params, client)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func autoLeaveRoomOnCommand(ctx context.Context, op *talkservice.Operation, client *lineclient.LINEClient, cfg *config.Config) error {
+	message := op.Message
+	to := message.To
+	if message.ToType == talkservice.MIDType_USER {
+		to = message.Get_from()
+	}
+
+	cfg.AutoLeaveRoom = true
+	err := config.SaveConfig(cfg, client.Mid)
+	if err != nil {
+		return err
+	}
+
+	msg := new(talkservice.Message)
+	msg.To = to
+	msg.Text = "オンにしました。"
+
+	_, err = client.TalkServiceClient.SendMessage(ctx, 0, msg)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func autoLeaveRoomOffCommand(ctx context.Context, op *talkservice.Operation, client *lineclient.LINEClient, cfg *config.Config) error {
+	message := op.Message
+	to := message.To
+	if message.ToType == talkservice.MIDType_USER {
+		to = message.Get_from()
+	}
+
+	cfg.AutoLeaveRoom = false
+	err := config.SaveConfig(cfg, client.Mid)
+	if err != nil {
+		return err
+	}
+
+	msg := new(talkservice.Message)
+	msg.To = to
+	msg.Text = "オフにしました。"
+
+	_, err = client.TalkServiceClient.SendMessage(ctx, 0, msg)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func macroCommand(ctx context.Context, op *talkservice.Operation, client *lineclient.LINEClient, cfg *config.Config) error {
+	message := op.Message
+	to := message.To
+	if message.ToType == talkservice.MIDType_USER {
+		to = message.Get_from()
+	}
+
+	texts := strings.SplitN(message.Text, ":", 3)
+
+	count, err := strconv.Atoi(texts[1])
+	if err != nil {
+		return err
+	}
+
+	text := texts[2]
+
+	msg := new(talkservice.Message)
+	msg.To = to
+	msg.Text = text
+
+	for i := 0; i < count; i++ {
+		_, err = client.TalkServiceClient.SendMessage(ctx, 0, msg)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

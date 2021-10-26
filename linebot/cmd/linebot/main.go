@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	config2 "github.com/mopeneko/line-selfbot/linebot/config"
 	"github.com/mopeneko/line-selfbot/linebot/pkg/config"
 	"github.com/mopeneko/line-selfbot/linebot/pkg/lineclient"
 	"github.com/mopeneko/line-selfbot/linebot/pkg/linetoken/androidlite"
@@ -30,8 +31,14 @@ func main() {
 		log.Fatalf("failed to generate LINE client: %+v\n", err)
 	}
 
+	// 設定の読み込み
+	config, err := config2.LoadConfig(client.Mid)
+	if err != nil {
+		log.Fatalf("failed to load config: %+v\n", err)
+	}
+
 	log.Println("Bot starting...")
-	poll.Poll(ctx, client)
+	poll.Poll(ctx, client, config)
 }
 
 func generateLINEClient(conf config.Config, accessToken string) (*lineclient.LINEClient, error) {

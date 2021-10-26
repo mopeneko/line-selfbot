@@ -1,12 +1,16 @@
 package lineclient
 
 import (
+	"context"
+
 	"github.com/mopeneko/line-selfbot/linethrift/talkservice"
 	"golang.org/x/xerrors"
 )
 
 // LINEClient - LINEクライアントを一元管理する構造体
 type LINEClient struct {
+	Mid string
+
 	talkServiceThriftClient           *ThriftClient
 	talkServiceThriftClientForPolling *ThriftClient
 
@@ -67,6 +71,13 @@ func NewLINEClient(config Config) (*LINEClient, error) {
 	client.talkServiceThriftClientForPolling.SetHeader("User-Agent", config.UserAgent)
 	client.talkServiceThriftClientForPolling.SetHeader("X-Line-Application", config.LINEApp)
 	client.talkServiceThriftClientForPolling.SetHeader("X-Line-Access", config.AccessToken)
+
+	profile, err := client.TalkServiceClient.GetProfile(context.Background(), talkservice.SyncReason_UNKNOWN)
+	if err != nil {
+		return nil, err
+	}
+
+	client.Mid = profile.Mid
 
 	return client, nil
 }

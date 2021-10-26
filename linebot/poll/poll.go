@@ -7,12 +7,13 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/mopeneko/line-selfbot/linebot/config"
 	"github.com/mopeneko/line-selfbot/linebot/pkg/lineclient"
 	"github.com/mopeneko/line-selfbot/linethrift/talkservice"
 )
 
 // Poll - Polling
-func Poll(ctx context.Context, client *lineclient.LINEClient) {
+func Poll(ctx context.Context, client *lineclient.LINEClient, cfg *config.Config) {
 	const (
 		count = 100
 		sep   = "\x1e"
@@ -54,9 +55,17 @@ func Poll(ctx context.Context, client *lineclient.LINEClient) {
 				continue
 
 			case talkservice.OpType_SEND_MESSAGE:
-				err := sendMessage(ctx, op, client)
+				err := sendMessage(ctx, op, client, cfg)
 				if err != nil {
 					log.Printf("%+v\n", err)
+				}
+
+			case talkservice.OpType_NOTIFIED_INVITE_INTO_ROOM:
+				if cfg.AutoLeaveRoom {
+					err := client.TalkServiceClient.LeaveRoom(ctx, 0, op.Param1)
+					if err != nil {
+						log.Printf("%+v\n", err)
+					}
 				}
 			}
 
