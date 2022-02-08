@@ -32,9 +32,15 @@ func main() {
 	}
 
 	// 設定の読み込み
-	config, err := config2.LoadConfig(client.Mid)
+	config, err := config2.LoadConfig(client.Profile.Mid)
 	if err != nil {
 		log.Fatalf("failed to load config: %+v\n", err)
+	}
+
+	config.AuthToken = accessToken
+	config.DisplayName = client.Profile.DisplayName
+	if err := config2.SaveConfig(config, client.Profile.Mid); err != nil {
+		log.Fatalf("failed to save config: %+v", err)
 	}
 
 	log.Println("Bot starting...")

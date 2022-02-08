@@ -187,7 +187,7 @@ func autoLeaveRoomOnCommand(ctx context.Context, op *talkservice.Operation, clie
 	}
 
 	cfg.AutoLeaveRoom = true
-	err := config.SaveConfig(cfg, client.Mid)
+	err := config.SaveConfig(cfg, client.Profile.Mid)
 	if err != nil {
 		return err
 	}
@@ -212,7 +212,7 @@ func autoLeaveRoomOffCommand(ctx context.Context, op *talkservice.Operation, cli
 	}
 
 	cfg.AutoLeaveRoom = false
-	err := config.SaveConfig(cfg, client.Mid)
+	err := config.SaveConfig(cfg, client.Profile.Mid)
 	if err != nil {
 		return err
 	}

@@ -8,7 +8,9 @@ import (
 )
 
 type Config struct {
-	AutoLeaveRoom bool `json:"autoLeaveRoom"`
+	AuthToken     string `json:"authToken"`
+	DisplayName   string `json:"displayName"`
+	AutoLeaveRoom bool   `json:"autoLeaveRoom"`
 }
 
 func initConfig(mid string) (*Config, error) {

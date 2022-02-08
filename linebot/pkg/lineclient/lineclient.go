@@ -9,7 +9,7 @@ import (
 
 // LINEClient - LINEクライアントを一元管理する構造体
 type LINEClient struct {
-	Mid string
+	Profile *talkservice.Profile
 
 	talkServiceThriftClient           *ThriftClient
 	talkServiceThriftClientForPolling *ThriftClient
@@ -77,7 +77,7 @@ func NewLINEClient(config Config) (*LINEClient, error) {
 		return nil, err
 	}
 
-	client.Mid = profile.Mid
+	client.Profile = profile
 
 	return client, nil
 }
