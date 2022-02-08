@@ -3,7 +3,11 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
+	"io/fs"
 	"log"
+	"os"
+	"path/filepath"
 
 	config2 "github.com/mopeneko/line-selfbot/linebot/config"
 	"github.com/mopeneko/line-selfbot/linebot/pkg/config"
@@ -18,9 +22,35 @@ func main() {
 
 	ctx := context.Background()
 
-	mid := flag.String("mid", "", "use authToken if not expired")
+	var (
+		mid = flag.String("mid", "", "use authToken if not expired")
+		l   = flag.Bool("l", false, "list configs")
+	)
 
 	flag.Parse()
+
+	if *l {
+		err := filepath.Walk("data", func(path string, info fs.FileInfo, err error) error {
+			if info.IsDir() {
+				return nil
+			}
+
+			mid := filepath.Base(path[:len(path)-len(filepath.Ext(path))])
+			cfg, err := config2.LoadConfig(mid)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("%s (%s)\n", mid, cfg.DisplayName)
+
+			return nil
+		})
+		if err != nil {
+			log.Fatalf("failed to list configs: %+v", err)
+		}
+
+		os.Exit(0)
+	}
 
 	if *mid != "" {
 		config, err := config2.LoadConfig(*mid)
