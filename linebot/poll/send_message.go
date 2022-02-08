@@ -312,6 +312,12 @@ func readPoint(ctx context.Context, op *talkservice.Operation, client *lineclien
 		msg.Text += fmt.Sprintf("%s\n", contact.DisplayName)
 	}
 
+	if msg.Text == "" {
+		msg.Text = "誰もいないよ"
+	}
+
+	strings.TrimRight(msg.Text, "\n")
+
 	_, err = client.TalkServiceClient.SendMessage(ctx, 0, msg)
 	if err != nil {
 		return err
