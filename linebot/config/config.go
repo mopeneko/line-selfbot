@@ -19,7 +19,7 @@ func initConfig(mid string) (*Config, error) {
 		return nil, err
 	}
 
-	err = os.Mkdir("./data", 0744)
+	err = os.MkdirAll("./data", 0744)
 	if err != nil {
 		return nil, err
 	}
