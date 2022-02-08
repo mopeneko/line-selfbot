@@ -2,7 +2,12 @@ package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
+	"io/fs"
 	"log"
+	"os"
+	"path/filepath"
 
 	config2 "github.com/mopeneko/line-selfbot/linebot/config"
 	"github.com/mopeneko/line-selfbot/linebot/pkg/config"
@@ -16,6 +21,51 @@ func main() {
 	conf := config.NewConfig()
 
 	ctx := context.Background()
+
+	var (
+		mid = flag.String("mid", "", "use authToken if not expired")
+		l   = flag.Bool("l", false, "list configs")
+	)
+
+	flag.Parse()
+
+	if *l {
+		err := filepath.Walk("data", func(path string, info fs.FileInfo, err error) error {
+			if info.IsDir() {
+				return nil
+			}
+
+			mid := filepath.Base(path[:len(path)-len(filepath.Ext(path))])
+			cfg, err := config2.LoadConfig(mid)
+			if err != nil {
+				return err
+			}
+
+			fmt.Printf("%s (%s)\n", mid, cfg.DisplayName)
+
+			return nil
+		})
+		if err != nil {
+			log.Fatalf("failed to list configs: %+v", err)
+		}
+
+		os.Exit(0)
+	}
+
+	if *mid != "" {
+		config, err := config2.LoadConfig(*mid)
+		if err != nil {
+			log.Fatalf("failed to load config: %+v", err)
+		}
+
+		client, err := generateLINEClient(conf, config.AuthToken)
+		if err != nil {
+			log.Printf("failed to generate LINE client: %+v", err)
+		}
+
+		Exec(ctx, config.AuthToken, client)
+		return
+	}
 
 	accessToken, certificate, err := androidlite.QRLogin(ctx, conf)
 	if err != nil {
@@ -31,6 +81,10 @@ func main() {
 		log.Fatalf("failed to generate LINE client: %+v\n", err)
 	}
 
+	Exec(ctx, accessToken, client)
+}
+
+func Exec(ctx context.Context, accessToken string, client *lineclient.LINEClient) {
 	// 設定の読み込み
 	config, err := config2.LoadConfig(client.Profile.Mid)
 	if err != nil {
