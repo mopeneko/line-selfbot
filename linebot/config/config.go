@@ -8,14 +8,17 @@ import (
 )
 
 type Config struct {
-	AuthToken     string `json:"authToken"`
-	DisplayName   string `json:"displayName"`
-	AutoLeaveRoom bool   `json:"autoLeaveRoom"`
+	AuthToken     string              `json:"authToken"`
+	DisplayName   string              `json:"displayName"`
+	AutoLeaveRoom bool                `json:"autoLeaveRoom"`
+	ReadPoint     map[string][]string `json:"-"`
 }
 
 func initConfig(mid string) (*Config, error) {
 	// TODO: 初期値が全てGoのデフォルトになってしまうので、NewConfig のようなイニシャライザ関数を作って、それを呼び出すようにする
-	cfg := new(Config)
+	cfg := &Config{
+		ReadPoint: make(map[string][]string),
+	}
 	b, err := json.Marshal(cfg)
 	if err != nil {
 		return nil, err
@@ -65,6 +68,8 @@ func LoadConfig(mid string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	cfg.ReadPoint = make(map[string][]string)
 
 	return cfg, nil
 }
