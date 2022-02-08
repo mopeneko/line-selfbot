@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/go-utils/cont"
+
 	"github.com/mopeneko/line-selfbot/linebot/config"
 	"github.com/mopeneko/line-selfbot/linebot/pkg/lineclient"
 	"github.com/mopeneko/line-selfbot/linethrift/talkservice"
@@ -67,6 +69,18 @@ func Poll(ctx context.Context, client *lineclient.LINEClient, cfg *config.Config
 						log.Printf("%+v\n", err)
 					}
 				}
+
+			case talkservice.OpType_NOTIFIED_READ_MESSAGE:
+				readPoint, ok := cfg.ReadPoint[op.Param1]
+				if !ok {
+					continue
+				}
+
+				if cont.Contains(readPoint, op.Param2) {
+					continue
+				}
+
+				cfg.ReadPoint[op.Param1] = append(readPoint, op.Param2)
 			}
 
 			localRev = int64(math.Max(float64(localRev), float64(op.Revision)))

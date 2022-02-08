@@ -68,6 +68,18 @@ func sendMessage(ctx context.Context, op *talkservice.Operation, client *linecli
 		if err != nil {
 			return err
 		}
+
+	case "set":
+		err := setPoint(ctx, op, client, cfg)
+		if err != nil {
+			return err
+		}
+
+	case "read":
+		err := readPoint(ctx, op, client, cfg)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -254,6 +266,55 @@ func macroCommand(ctx context.Context, op *talkservice.Operation, client *linecl
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func setPoint(ctx context.Context, op *talkservice.Operation, client *lineclient.LINEClient, cfg *config.Config) error {
+	message := op.Message
+
+	cfg.ReadPoint[message.To] = make([]string, 0)
+
+	msg := new(talkservice.Message)
+	msg.To = message.To
+	msg.Text = "セットしたよ"
+
+	_, err := client.TalkServiceClient.SendMessage(ctx, 0, msg)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func readPoint(ctx context.Context, op *talkservice.Operation, client *lineclient.LINEClient, cfg *config.Config) error {
+	message := op.Message
+	msg := new(talkservice.Message)
+	msg.To = message.To
+
+	readers, ok := cfg.ReadPoint[message.To]
+	if !ok {
+		msg.Text = "既読ポイントが設定されていません"
+		_, err := client.TalkServiceClient.SendMessage(ctx, 0, msg)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	readersContact, err := client.TalkServiceClient.GetContacts(ctx, readers)
+	if err != nil {
+		return err
+	}
+
+	for _, contact := range readersContact {
+		msg.Text += fmt.Sprintf("%s\n", contact.DisplayName)
+	}
+
+	_, err = client.TalkServiceClient.SendMessage(ctx, 0, msg)
+	if err != nil {
+		return err
 	}
 
 	return nil
