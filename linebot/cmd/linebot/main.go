@@ -18,7 +18,7 @@ func main() {
 
 	ctx := context.Background()
 
-	mid := flag.String("mid", "bot account mid", "use authToken if not expired")
+	mid := flag.String("mid", "", "use authToken if not expired")
 
 	flag.Parse()
 
