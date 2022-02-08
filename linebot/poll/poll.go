@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/go-utils/cont"
-
 	"github.com/mopeneko/line-selfbot/linebot/config"
 	"github.com/mopeneko/line-selfbot/linebot/pkg/lineclient"
 	"github.com/mopeneko/line-selfbot/linethrift/talkservice"
