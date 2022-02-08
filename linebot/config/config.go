@@ -8,7 +8,9 @@ import (
 )
 
 type Config struct {
-	AutoLeaveRoom bool `json:"autoLeaveRoom"`
+	AuthToken     string `json:"authToken"`
+	DisplayName   string `json:"displayName"`
+	AutoLeaveRoom bool   `json:"autoLeaveRoom"`
 }
 
 func initConfig(mid string) (*Config, error) {
@@ -19,7 +21,7 @@ func initConfig(mid string) (*Config, error) {
 		return nil, err
 	}
 
-	err = os.Mkdir("./data", 0744)
+	err = os.MkdirAll("./data", 0744)
 	if err != nil {
 		return nil, err
 	}
