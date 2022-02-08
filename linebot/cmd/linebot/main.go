@@ -59,12 +59,9 @@ func main() {
 		}
 
 		client, err := generateLINEClient(conf, config.AuthToken)
-		if err != nil {
-			log.Printf("failed to generate LINE client: %+v", err)
+		if err == nil {
+			Exec(ctx, config.AuthToken, client)
 		}
-
-		Exec(ctx, config.AuthToken, client)
-		return
 	}
 
 	accessToken, certificate, err := androidlite.QRLogin(ctx, conf)
